@@ -23,7 +23,14 @@
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            /* * --- FIX 1: Use 100dvh instead of 100vh ---
+             * 100vh is "viewport height" and is unreliable on mobile, as it doesn't
+             * account for the browser's dynamic URL bar.
+             * 100dvh is "dynamic viewport height" and WILL resize correctly.
+             * This single change should fix the Flexbox, Grid, and Sticky layouts
+             * on Android, making the footer visible.
+            */
+            height: 100dvh; 
             box-sizing: border-box;
         }
 
@@ -127,7 +134,7 @@
         .grid-layout {
             display: grid;
             grid-template-rows: auto 1fr auto var(--footer-height);
-            height: 100vh;
+            height: 100dvh; /* Also use 100dvh here */
         }
 
         /* Approach C: JavaScript (Visual Viewport API) */
@@ -139,13 +146,6 @@
             z-index: 100; /* Ensure it's above other content */
         }
 
-        /*
-         *   === FIX APPLIED HERE ===
-         *   Previously, padding was incorrectly applied to the parent container.
-         *   Now, we apply padding to the '.main-content' itself. This creates space
-         *   INSIDE the scrollable area, preventing its content from being hidden
-         *   behind the fixed footer, without causing the footer itself to be clipped.
-        */
         .js-layout .main-content {
             padding-bottom: var(--footer-height);
         }
@@ -191,6 +191,7 @@
         const layoutSelector = document.getElementById('layout-selector');
         const footer = document.querySelector('.footer-input');
         const mainContent = document.querySelector('.main-content');
+        const nameInput = document.querySelector('.name-input'); // --- FIX 2 (Part 1) ---
 
         const layoutClasses = ['grid-layout', 'js-layout', 'simple-layout'];
         const baseLayout = 'flex-layout'; // The default layout
@@ -230,6 +231,16 @@
             };
 
             window.visualViewport.addEventListener('resize', applyViewportChanges);
+
+            // --- FIX 2 (Part 2): Fix the "jump" on keyboard hide ---
+            // When the input loses focus (e.g., user hides keyboard), the 'blur'
+            // event fires. We'll proactively set the footer to 'bottom: 0'
+            // to prevent any "jumps" while waiting for the resize event.
+            nameInput.addEventListener('blur', () => {
+                if (appContainer.classList.contains('js-layout')) {
+                    footer.style.bottom = '0px';
+                }
+            });
         }
         
         handleVirtualKeyboard();
