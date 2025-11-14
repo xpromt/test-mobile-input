@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mobile Screen Tester</title>
+    <style>
+        /* --- 1. BASE AND RESET STYLES --- */
+        :root {
+            --footer-height: 75px; 
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* The main wrapper for the entire application */
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .selector-container {
+            padding: 1rem;
+            background-color: #ffffff;
+            text-align: center;
+            border-bottom: 1px solid #dcdcdc;
+            flex-shrink: 0;
+        }
+
+        .selector-container label {
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        #layout-selector {
+            padding: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
+        
+        /* The area for the image and title */
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto; /* Allow content to scroll if it's too long */
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box; /* Important for padding calculation */
+        }
+
+        .image-container {
+            width: 100%;
+            flex-grow: 1;
+            position: relative; 
+            background-color: #000000;
+        }
+
+        .main-image {
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            object-fit: contain; 
+            display: block;
+        }
+
+        .title {
+            text-align: center;
+            padding: 1rem;
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 500;
+            background-color: #ffffff;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+        
+        /* The footer containing the input and button */
+        .footer-input {
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            background-color: #f0f2f5;
+            box-sizing: border-box;
+            gap: 1rem;
+            height: var(--footer-height);
+            width: 100%;
+            flex-shrink: 0;
+            border-top: 1px solid #dcdcdc;
+        }
+
+        .name-input {
+            flex-grow: 1;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid #ccc;
+            border-radius: 2rem;
+            font-size: 1rem;
+            height: 48px;
+            box-sizing: border-box;
+        }
+
+        .call-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- 2. CSS FOR DIFFERENT LAYOUT APPROACHES --- */
+
+        /* Approach B: CSS Grid */
+        .grid-layout {
+            display: grid;
+            grid-template-rows: auto 1fr auto var(--footer-height);
+            height: 100vh;
+        }
+
+        /* Approach C: JavaScript (Visual Viewport API) */
+        .js-layout .footer-input {
+            position: fixed; /* Position relative to viewport */
+            bottom: 0;
+            left: 0;
+            transition: bottom 0.2s ease-out;
+            z-index: 100; /* Ensure it's above other content */
+        }
+
+        /*
+         *   === FIX APPLIED HERE ===
+         *   Previously, padding was incorrectly applied to the parent container.
+         *   Now, we apply padding to the '.main-content' itself. This creates space
+         *   INSIDE the scrollable area, preventing its content from being hidden
+         *   behind the fixed footer, without causing the footer itself to be clipped.
+        */
+        .js-layout .main-content {
+            padding-bottom: var(--footer-height);
+        }
+
+        /* Approach D: Simple Sticky */
+        .simple-layout .footer-input {
+            position: sticky;
+            bottom: 0;
+        }
+        
+    </style>
+</head>
+
+<body>
+
+    <div id="app-container">
+        <div class="selector-container">
+            <label for="layout-selector">Test Approach:</label>
+            <select id="layout-selector">
+                <option value="flex-layout" selected>Flexbox (Default)</option>
+                <option value="grid-layout">CSS Grid</option>
+                <option value="js-layout">JavaScript (Visual Viewport)</option>
+                <option value="simple-layout">Simple Sticky</option>
+            </select>
+        </div>
+        
+        <main class="main-content">
+            <div class="image-container">
+                 <img src="test-image.png" alt="test image" class="main-image">
+            </div>
+            <h1 class="title">Free conference</h1>
+        </main>
+
+        <footer class="footer-input">
+            <input type="text" placeholder="Type your name" class="name-input">
+            <button class="call-button" aria-label="Start call">📞</button>
+        </footer>
+    </div>
+
+    <script>
+        // --- 3. JAVASCRIPT LOGIC ---
+        const appContainer = document.getElementById('app-container');
+        const layoutSelector = document.getElementById('layout-selector');
+        const footer = document.querySelector('.footer-input');
+        const mainContent = document.querySelector('.main-content');
+
+        const layoutClasses = ['grid-layout', 'js-layout', 'simple-layout'];
+        const baseLayout = 'flex-layout'; // The default layout
+
+        // --- Logic for the Layout Selector Dropdown ---
+        layoutSelector.addEventListener('change', (event) => {
+            const selectedLayout = event.target.value;
+            
+            // Remove all possible layout classes to reset state
+            appContainer.classList.remove(...layoutClasses);
+            mainContent.style.paddingBottom = ''; // Reset inline styles
+
+            // Add the newly selected class if it's not the default
+            if (selectedLayout !== baseLayout) {
+                appContainer.classList.add(selectedLayout);
+            }
+
+            // Reset any inline styles that might have been set by the JS method
+            footer.style.bottom = '';
+        });
+
+        // --- Logic for the "JavaScript (Visual Viewport)" approach ---
+        function handleVirtualKeyboard() {
+            if (!window.visualViewport) return;
+
+            const applyViewportChanges = () => {
+                // Only apply this logic if the JS mode is active
+                if (!appContainer.classList.contains('js-layout')) return;
+
+                const vp = window.visualViewport;
+                
+                // When keyboard is up, the difference between window and viewport height is the keyboard's height.
+                const keyboardHeight = window.innerHeight - vp.height;
+
+                // Move the footer up by the height of the keyboard.
+                footer.style.bottom = `${Math.max(0, keyboardHeight)}px`;
+            };
+
+            window.visualViewport.addEventListener('resize', applyViewportChanges);
+        }
+        
+        handleVirtualKeyboard();
+
+    </script>
+
+</body>
+</html>
